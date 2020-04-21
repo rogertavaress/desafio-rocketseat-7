@@ -9,7 +9,7 @@ import api from '../../services/api';
 
 import Header from '../../components/Header';
 
-import { formatValue, formatValueStatus } from '../../utils/formatValue';
+import formatValue from '../../utils/formatValue';
 import formatDate from '../../utils/formatDate';
 
 import {
@@ -46,33 +46,30 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    async function loadTransactions(): Promise<void> {
-      const { data } = await api.get('/transactions');
+    api.get('/transactions').then(response => {
+      const { data } = response;
       const transactionsData = data.transactions.map(
         (transaction: Transaction) => {
-          const formattedDate = formatDate(transaction.created_at);
-          const formattedValue = formatValue(
-            transaction.value,
-            transaction.type,
-          );
-          const value =
-            transaction.value < 0 ? transaction.value * -1 : transaction.value;
-
-          return { ...transaction, formattedDate, formattedValue, value };
+          return {
+            ...transaction,
+            formattedDate: formatDate(transaction.created_at),
+            formattedValue:
+              transaction.type === 'income'
+                ? `${formatValue(transaction.value)}`
+                : `- ${formatValue(transaction.value)}`,
+          };
         },
       );
 
       const balanceData: Balance = {
-        income: formatValueStatus(data.balance.income) || '0',
-        outcome: formatValueStatus(data.balance.outcome) || '0',
-        total: formatValueStatus(data.balance.total) || '0',
+        income: formatValue(data.balance.income) || 'R$ 0,00',
+        outcome: formatValue(data.balance.outcome) || 'R$ 0,00',
+        total: formatValue(data.balance.total) || 'R$ 0,00',
       };
 
       setTransactions(transactionsData);
       setBalance(balanceData);
-    }
-
-    loadTransactions();
+    });
   }, []);
 
   const byTitle = async (value: 'cresc' | 'decr'): Promise<Transaction[]> => {
