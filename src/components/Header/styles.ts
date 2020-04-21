@@ -33,16 +33,22 @@ export const Container = styled.div<ContainerProps>`
           margin-left: 32px;
         }
 
-        &:hover {
+        /* &:hover {
           opacity: 0.6;
-        }
+        } */
       }
     }
   }
 `;
 
 export const LinkMenu = styled(Link)<LinkProps>`
+  opacity: ${props => (props.locationofthepage === props.to ? '1' : '0.6')};
   border-bottom: ${props =>
     props.locationofthepage === props.to ? '2px solid #ff872c' : '0px'};
   padding-bottom: 10px;
+
+  &:hover {
+    border-bottom: 2px solid #ff872c;
+    opacity: 1;
+  }
 `;
