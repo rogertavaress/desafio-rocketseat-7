@@ -4,6 +4,13 @@ interface CardProps {
   total?: boolean;
 }
 
+interface OrderByProps {
+  buttonSelected: {
+    title: string;
+    orientation: string;
+  };
+}
+
 export const Container = styled.div`
   width: 100%;
   max-width: 1120px;
@@ -44,6 +51,22 @@ export const Card = styled.div`
     font-size: 36px;
     font-weight: normal;
     line-height: 54px;
+  }
+`;
+
+export const ButtonArrow = styled.button<OrderByProps>`
+  border: 0;
+  background: transparent;
+  margin-left: 12px;
+
+  svg {
+    color: ${props =>
+      props.id === props.buttonSelected.title ? '#FF872C' : '#969cb3'};
+    transform: ${props =>
+      props.id === props.buttonSelected.title &&
+      props.buttonSelected.orientation === 'decr'
+        ? 'rotate(-180deg)'
+        : 'rotate(0deg)'};
   }
 `;
 

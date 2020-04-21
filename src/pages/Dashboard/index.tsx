@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FiChevronDown } from 'react-icons/fi';
 
 import income from '../../assets/income.svg';
 import outcome from '../../assets/outcome.svg';
@@ -8,9 +9,16 @@ import api from '../../services/api';
 
 import Header from '../../components/Header';
 
-import formatValue from '../../utils/formatValue';
+import { formatValue, formatValueStatus } from '../../utils/formatValue';
+import formatDate from '../../utils/formatDate';
 
-import { Container, CardContainer, Card, TableContainer } from './styles';
+import {
+  Container,
+  CardContainer,
+  Card,
+  TableContainer,
+  ButtonArrow,
+} from './styles';
 
 interface Transaction {
   id: string;
@@ -30,16 +38,182 @@ interface Balance {
 }
 
 const Dashboard: React.FC = () => {
-  // const [transactions, setTransactions] = useState<Transaction[]>([]);
-  // const [balance, setBalance] = useState<Balance>({} as Balance);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [balance, setBalance] = useState<Balance>({} as Balance);
+  const [orderBy, setOrderBy] = useState({
+    title: '',
+    orientation: 'cresc',
+  });
 
   useEffect(() => {
     async function loadTransactions(): Promise<void> {
-      // TODO
+      const { data } = await api.get('/transactions');
+      const transactionsData = data.transactions.map(
+        (transaction: Transaction) => {
+          const formattedDate = formatDate(transaction.created_at);
+          const formattedValue = formatValue(
+            transaction.value,
+            transaction.type,
+          );
+          const value =
+            transaction.value < 0 ? transaction.value * -1 : transaction.value;
+
+          return { ...transaction, formattedDate, formattedValue, value };
+        },
+      );
+
+      const balanceData: Balance = {
+        income: formatValueStatus(data.balance.income) || '0',
+        outcome: formatValueStatus(data.balance.outcome) || '0',
+        total: formatValueStatus(data.balance.total) || '0',
+      };
+
+      setTransactions(transactionsData);
+      setBalance(balanceData);
     }
 
     loadTransactions();
   }, []);
+
+  const byTitle = async (value: 'cresc' | 'decr'): Promise<Transaction[]> => {
+    const newTransactionOrder = await transactions.sort(
+      (a: Transaction, b: Transaction) => {
+        if (a.title > b.title) {
+          return 1;
+        }
+        if (a.title < b.title) {
+          return -1;
+        }
+        // a must be equal to b
+        return 0;
+      },
+    );
+    if (value === 'cresc') {
+      return newTransactionOrder;
+    }
+    return newTransactionOrder.reverse();
+  };
+
+  const byPrice = async (value: 'cresc' | 'decr'): Promise<Transaction[]> => {
+    const newTransactionOrder = await transactions.sort(
+      (a: Transaction, b: Transaction) => {
+        if (a.value > b.value) {
+          return 1;
+        }
+        if (a.value < b.value) {
+          return -1;
+        }
+        // a must be equal to b
+        return 0;
+      },
+    );
+    if (value === 'cresc') {
+      return newTransactionOrder;
+    }
+    return newTransactionOrder.reverse();
+  };
+
+  const byCategory = async (
+    value: 'cresc' | 'decr',
+  ): Promise<Transaction[]> => {
+    const newTransactionOrder = await transactions.sort(
+      (a: Transaction, b: Transaction) => {
+        if (a.category.title > b.category.title) {
+          return 1;
+        }
+        if (a.category.title < b.category.title) {
+          return -1;
+        }
+        // a must be equal to b
+        return 0;
+      },
+    );
+    if (value === 'cresc') {
+      return newTransactionOrder;
+    }
+    return newTransactionOrder.reverse();
+  };
+
+  const byDate = async (value: 'cresc' | 'decr'): Promise<Transaction[]> => {
+    const newTransactionOrder = await transactions.sort(
+      (a: Transaction, b: Transaction) => {
+        if (a.created_at > b.created_at) {
+          return 1;
+        }
+        if (a.created_at < b.created_at) {
+          return -1;
+        }
+        // a must be equal to b
+        return 0;
+      },
+    );
+    if (value === 'cresc') {
+      return newTransactionOrder;
+    }
+    return newTransactionOrder.reverse();
+  };
+
+  const handleOrderBy = async (title: string): Promise<void> => {
+    let newOrder: Transaction[] = [];
+    if (title === 'Título') {
+      if (orderBy.title !== title) {
+        newOrder = await byTitle('cresc');
+        setOrderBy({ title, orientation: 'cresc' });
+      } else {
+        newOrder = await byTitle(
+          orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        );
+        setOrderBy({
+          title,
+          orientation: orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        });
+      }
+    }
+    if (title === 'Preço') {
+      if (orderBy.title !== title) {
+        newOrder = await byPrice('cresc');
+        setOrderBy({ title, orientation: 'cresc' });
+      } else {
+        newOrder = await byPrice(
+          orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        );
+        setOrderBy({
+          title,
+          orientation: orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        });
+      }
+    }
+    if (title === 'Categoria') {
+      if (orderBy.title !== title) {
+        newOrder = await byCategory('cresc');
+        setOrderBy({ title, orientation: 'cresc' });
+      } else {
+        newOrder = await byCategory(
+          orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        );
+        setOrderBy({
+          title,
+          orientation: orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        });
+      }
+    }
+    if (title === 'Data') {
+      if (orderBy.title !== title) {
+        newOrder = await byDate('cresc');
+        setOrderBy({ title, orientation: 'cresc' });
+      } else {
+        newOrder = await byDate(
+          orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        );
+        setOrderBy({
+          title,
+          orientation: orderBy.orientation === 'cresc' ? 'decr' : 'cresc',
+        });
+      }
+    }
+
+    await setTransactions(newOrder);
+  };
 
   return (
     <>
@@ -51,21 +225,21 @@ const Dashboard: React.FC = () => {
               <p>Entradas</p>
               <img src={income} alt="Income" />
             </header>
-            <h1 data-testid="balance-income">R$ 5.000,00</h1>
+            <h1 data-testid="balance-income">{balance.income}</h1>
           </Card>
           <Card>
             <header>
               <p>Saídas</p>
               <img src={outcome} alt="Outcome" />
             </header>
-            <h1 data-testid="balance-outcome">R$ 1.000,00</h1>
+            <h1 data-testid="balance-outcome">{balance.outcome}</h1>
           </Card>
           <Card total>
             <header>
               <p>Total</p>
               <img src={total} alt="Total" />
             </header>
-            <h1 data-testid="balance-total">R$ 4000,00</h1>
+            <h1 data-testid="balance-total">{balance.total}</h1>
           </Card>
         </CardContainer>
 
@@ -73,26 +247,65 @@ const Dashboard: React.FC = () => {
           <table>
             <thead>
               <tr>
-                <th>Título</th>
-                <th>Preço</th>
-                <th>Categoria</th>
-                <th>Data</th>
+                <th>
+                  Título
+                  <ButtonArrow
+                    type="button"
+                    id="Título"
+                    onClick={() => handleOrderBy('Título')}
+                    buttonSelected={orderBy}
+                  >
+                    <FiChevronDown size={14} />
+                  </ButtonArrow>
+                </th>
+                <th>
+                  Preço
+                  <ButtonArrow
+                    type="button"
+                    id="Preço"
+                    onClick={() => handleOrderBy('Preço')}
+                    buttonSelected={orderBy}
+                  >
+                    <FiChevronDown size={14} />
+                  </ButtonArrow>
+                </th>
+                <th>
+                  Categoria
+                  <ButtonArrow
+                    type="button"
+                    id="Categoria"
+                    onClick={() => handleOrderBy('Categoria')}
+                    buttonSelected={orderBy}
+                  >
+                    <FiChevronDown size={14} />
+                  </ButtonArrow>
+                </th>
+                <th>
+                  Data
+                  <ButtonArrow
+                    type="button"
+                    id="Data"
+                    onClick={() => handleOrderBy('Data')}
+                    buttonSelected={orderBy}
+                  >
+                    <FiChevronDown size={14} />
+                  </ButtonArrow>
+                </th>
               </tr>
             </thead>
 
             <tbody>
-              <tr>
-                <td className="title">Computer</td>
-                <td className="income">R$ 5.000,00</td>
-                <td>Sell</td>
-                <td>20/04/2020</td>
-              </tr>
-              <tr>
-                <td className="title">Website Hosting</td>
-                <td className="outcome">- R$ 1.000,00</td>
-                <td>Hosting</td>
-                <td>19/04/2020</td>
-              </tr>
+              {transactions &&
+                transactions.map(transaction => (
+                  <tr key={transaction.id}>
+                    <td className="title">{transaction.title}</td>
+                    <td className={transaction.type}>
+                      {transaction.formattedValue}
+                    </td>
+                    <td>{transaction.category.title}</td>
+                    <td>{transaction.formattedDate}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </TableContainer>

@@ -1,7 +1,13 @@
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 
 interface ContainerProps {
   size?: 'small' | 'large';
+}
+
+interface LinkProps {
+  to: string;
+  locationofthepage: string;
 }
 
 export const Container = styled.div<ContainerProps>`
@@ -33,4 +39,10 @@ export const Container = styled.div<ContainerProps>`
       }
     }
   }
+`;
+
+export const LinkMenu = styled(Link)<LinkProps>`
+  border-bottom: ${props =>
+    props.locationofthepage === props.to ? '2px solid #ff872c' : '0px'};
+  padding-bottom: 10px;
 `;
